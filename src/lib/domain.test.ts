@@ -56,6 +56,15 @@ describe("addBuyIn + counts", () => {
     addBuyIn(s, s.players[0].id);
     expect(s.events.length).toBe(before);
   });
+
+  it("accepts a custom amount instead of the session default", () => {
+    let s = base();
+    const luis = s.players[0];
+    s = addBuyIn(s, luis.id);
+    s = addBuyIn(s, luis.id, 250);
+    expect(buyInCount(s, luis.id)).toBe(2);
+    expect(totalPaid(s, luis.id)).toBe(350);
+  });
 });
 
 describe("undoLastBuyIn", () => {

@@ -70,12 +70,16 @@ export function hasAllFinalChips(session: Session): boolean {
   );
 }
 
-export function addBuyIn(session: Session, playerId: ID): Session {
+export function addBuyIn(
+  session: Session,
+  playerId: ID,
+  amount?: number,
+): Session {
   const now = Date.now();
   const event: BuyInEvent = {
     id: newId(),
     playerId,
-    amount: session.buyInAmount,
+    amount: amount ?? session.buyInAmount,
     at: now,
   };
   return { ...session, events: [...session.events, event], updatedAt: now };

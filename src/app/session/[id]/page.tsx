@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { RebuyPicker } from "@/components/RebuyPicker";
 import { SaveIndicator } from "@/components/SaveIndicator";
 import {
   activeEvents,
@@ -33,6 +34,7 @@ export default function SessionPage({
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [customFor, setCustomFor] = useState<Player | null>(null);
 
   if (!loaded) {
     return (
@@ -107,6 +109,7 @@ export default function SessionPage({
             paid={totalPaid(session, player.id)}
             disabled={isSettled}
             onAddBuyIn={() => update((s) => addBuyIn(s, player.id))}
+            onCustomBuyIn={() => setCustomFor(player)}
             onUndo={() => update((s) => undoLastBuyIn(s, player.id))}
             onRemove={() => update((s) => removePlayer(s, player.id))}
           />
@@ -215,6 +218,18 @@ export default function SessionPage({
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}
       />
+
+      <RebuyPicker
+        open={customFor !== null}
+        playerName={customFor?.name ?? ""}
+        onPick={(amount) => {
+          if (!customFor) return;
+          const pid = customFor.id;
+          update((s) => addBuyIn(s, pid, amount));
+          setCustomFor(null);
+        }}
+        onCancel={() => setCustomFor(null)}
+      />
     </main>
   );
 }
@@ -226,6 +241,7 @@ function PlayerRow({
   paid,
   disabled,
   onAddBuyIn,
+  onCustomBuyIn,
   onUndo,
   onRemove,
 }: {
@@ -235,10 +251,10 @@ function PlayerRow({
   paid: number;
   disabled: boolean;
   onAddBuyIn: () => void;
+  onCustomBuyIn: () => void;
   onUndo: () => void;
   onRemove: () => void;
 }) {
-  void buyInAmount;
   return (
     <div className="rounded-2xl border border-zinc-800 p-4">
       <div className="flex items-start justify-between">
@@ -266,7 +282,14 @@ function PlayerRow({
             onClick={onAddBuyIn}
             className="flex-1 h-11 rounded-full bg-zinc-800 hover:bg-zinc-700 font-medium text-sm"
           >
-            + Rebuy
+            + Rebuy {formatPEN(buyInAmount)}
+          </button>
+          <button
+            type="button"
+            onClick={onCustomBuyIn}
+            className="px-4 h-11 rounded-full border border-zinc-800 text-sm hover:bg-zinc-900"
+          >
+            Otro
           </button>
           <button
             type="button"
