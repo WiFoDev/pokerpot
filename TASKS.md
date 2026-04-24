@@ -23,48 +23,49 @@ Sin backend. Deploy en Vercel.
   - `layout.tsx`: metadata, viewport con `themeColor`, `apple-web-app`
   - `lang="es-PE"`, layout mobile-first
 
-- [ ] **TASK-02** — Capa de almacenamiento (localStorage)
+- [x] **TASK-02** — Capa de almacenamiento (localStorage)
   - Keys: `pokerpot:index` (array de session IDs), `pokerpot:session:<id>`
   - `schemaVersion` por sesión para futuras migraciones
-  - API: `listSessions`, `getSession`, `saveSession`, `deleteSession`
-  - Indicador "Guardado hace Xs" en la UI
+  - Store externo (`useSyncExternalStore`) con snapshots cacheados
+  - Indicador "Guardado hace Xs" en la UI (derivado de `updatedAt`)
   - Sesiones corruptas no rompen el índice
 
-- [ ] **TASK-03** — Tipos + lógica de dominio del event log
-  - `Session`, `Player`, `BuyInEvent` (append-only)
-  - Derivaciones puras: `totalBuyIns(player, events)`, `netPosition(player)`
-  - `undoLastEvent()` como soft-delete marcado
-  - Tests unitarios de las derivaciones
+- [x] **TASK-03** — Tipos + lógica de dominio del event log
+  - `Session`, `Player`, `BuyInEvent` (append-only con soft-delete)
+  - Derivaciones puras: `buyInCount`, `totalPaid`, `netPosition`, `zeroSumDiff`
+  - `undoLastBuyIn()` como soft-delete marcado
+  - 14 tests unitarios de las derivaciones
 
-- [ ] **TASK-04** — Home (lista de partidas + nueva)
-  - Listar sesiones activas arriba, archivadas abajo
+- [x] **TASK-04** — Home (lista de partidas + nueva)
+  - Listar sesiones activas arriba, cerradas abajo
   - CTA "Nueva partida" → `/session/new`
   - Formulario: nombre, monto buy-in (default 100 PEN), jugadores iniciales
 
-- [ ] **TASK-05** — Partida activa (`/session/[id]`)
+- [x] **TASK-05** — Partida activa (`/session/[id]`)
   - Lista de jugadores con contador de buy-ins y total pagado
   - Botón `+ Rebuy` por jugador (auto-guarda)
   - `↶ Deshacer último` (soft-delete del último evento)
-  - Timeline con timestamps
+  - Historial colapsable con timestamps
+  - Agregar jugador en caliente, quitar solo si no tiene buy-ins
   - Botón "Terminar" → `/session/[id]/settle`
 
-- [ ] **TASK-06** — Liquidación (`/session/[id]/settle`)
+- [x] **TASK-06** — Liquidación (`/session/[id]/settle`)
   - Input de fichas finales por jugador
   - Validación zero-sum con diff visible (no bloquea)
-  - Al confirmar, dispara TASK-07
+  - Permite reabrir partidas cerradas
 
-- [ ] **TASK-07** — Algoritmo min-cashflow + pantalla de pagos
+- [x] **TASK-07** — Algoritmo min-cashflow + pantalla de pagos
   - Greedy: ordena créditos y deudas, empareja el mayor con el mayor
   - Produce ≤ N-1 transferencias
-  - Lista "Juan paga 150 a Pedro"
-  - Tests con casos conocidos
+  - Lista "Juan paga a Pedro" con monto en PEN
+  - 6 tests cubriendo casos y conservación de dinero
 
-- [ ] **TASK-08** — Export / import JSON
-  - Export: copiar al portapapeles + Web Share API
-  - Import: pegar JSON para restaurar (útil si se pierde storage)
+- [x] **TASK-08** — Export / import JSON
+  - Export: compartir resumen (Web Share API + fallback clipboard) y JSON crudo
+  - Import: pegar JSON desde el home para restaurar
 
-- [ ] **TASK-09** — Confirmaciones destructivas + pulido PWA
+- [x] **TASK-09** — Confirmaciones destructivas + pulido PWA
   - Eliminar partida: requiere escribir "ELIMINAR"
-  - Íconos PWA (192, 512, maskable)
-  - Install prompt
+  - Quitar jugador solo si no tiene buy-ins
   - Formato PEN (`Intl.NumberFormat('es-PE')`) en toda la app
+  - Pendiente: íconos PWA 192/512 maskable (requiere arte)

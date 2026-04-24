@@ -1,49 +1,62 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getSession, saveSession } from "./storage";
+import { useCallback, useSyncExternalStore } from "react";
+import {
+  getServerSessionSnapshot,
+  getServerSessionsSnapshot,
+  getSessionSnapshot,
+  getSessionsSnapshot,
+  saveSession,
+  subscribeStorage,
+} from "./storage";
 import type { Session } from "./types";
 
-type State = {
-  session: Session | null;
-  loaded: boolean;
-  savedAt: number | null;
-};
+const emptySubscribe = () => () => {};
+const trueSnapshot = () => true;
+const falseSnapshot = () => false;
+
+export function useIsHydrated(): boolean {
+  return useSyncExternalStore(emptySubscribe, trueSnapshot, falseSnapshot);
+}
+
+export function useSessions(): Session[] {
+  return useSyncExternalStore(
+    subscribeStorage,
+    getSessionsSnapshot,
+    getServerSessionsSnapshot,
+  );
+}
 
 export function useSession(id: string | null) {
-  const [state, setState] = useState<State>({
-    session: null,
-    loaded: false,
-    savedAt: null,
-  });
-  const lastId = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!id) {
-      setState({ session: null, loaded: true, savedAt: null });
-      return;
-    }
-    lastId.current = id;
-    const loaded = getSession(id);
-    setState({ session: loaded, loaded: true, savedAt: loaded ? Date.now() : null });
-  }, [id]);
+  const getSnapshot = useCallback(
+    () => (id ? getSessionSnapshot(id) : null),
+    [id],
+  );
+  const session = useSyncExternalStore(
+    subscribeStorage,
+    getSnapshot,
+    getServerSessionSnapshot,
+  );
+  const hydrated = useIsHydrated();
 
   const update = useCallback(
     (mutator: (s: Session) => Session) => {
-      setState((prev) => {
-        if (!prev.session) return prev;
-        const next = mutator(prev.session);
-        saveSession(next);
-        return { session: next, loaded: true, savedAt: Date.now() };
-      });
+      if (!session) return;
+      const next = mutator(session);
+      saveSession(next);
     },
-    [],
+    [session],
   );
 
   const replace = useCallback((s: Session) => {
     saveSession(s);
-    setState({ session: s, loaded: true, savedAt: Date.now() });
   }, []);
 
-  return { ...state, update, replace };
+  return {
+    session,
+    loaded: hydrated,
+    savedAt: session?.updatedAt ?? null,
+    update,
+    replace,
+  };
 }
